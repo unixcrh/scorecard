@@ -36,11 +36,10 @@ import (
 	docs "github.com/ossf/scorecard/v2/docs/checks"
 	sce "github.com/ossf/scorecard/v2/errors"
 	"github.com/ossf/scorecard/v2/pkg"
-	"github.com/ossf/scorecard/v2/repos"
 )
 
 var (
-	repo        repos.RepoURL
+	repoURL     string
 	checksToRun []string
 	metaData    []string
 	// This one has to use goflag instead of pflag because it's defined by zap.
@@ -75,7 +74,7 @@ or ./scorecard --{npm,pypi,rubgems}=<package_name> [--checks=check1,...] [--show
 			if git, err := fetchGitRepositoryFromNPM(npm); err != nil {
 				log.Fatal(err)
 			} else {
-				if err := cmd.Flags().Set("repo", git); err != nil {
+				if err := cmd.Flags().Set("repoURL", git); err != nil {
 					log.Fatal(err)
 				}
 			}
@@ -83,7 +82,7 @@ or ./scorecard --{npm,pypi,rubgems}=<package_name> [--checks=check1,...] [--show
 			if git, err := fetchGitRepositoryFromPYPI(pypi); err != nil {
 				log.Fatal(err)
 			} else {
-				if err := cmd.Flags().Set("repo", git); err != nil {
+				if err := cmd.Flags().Set("repoURL", git); err != nil {
 					log.Fatal(err)
 				}
 			}
@@ -91,17 +90,18 @@ or ./scorecard --{npm,pypi,rubgems}=<package_name> [--checks=check1,...] [--show
 			if git, err := fetchGitRepositoryFromRubyGems(rubygems); err != nil {
 				log.Fatal(err)
 			} else {
-				if err := cmd.Flags().Set("repo", git); err != nil {
+				if err := cmd.Flags().Set("repoURL", git); err != nil {
 					log.Fatal(err)
 				}
 			}
 		} else {
-			if err := cmd.MarkFlagRequired("repo"); err != nil {
+			if err := cmd.MarkFlagRequired("repoURL"); err != nil {
 				log.Fatal(err)
 			}
 		}
 
-		if err := repo.ValidGitHubURL(); err != nil {
+		repo, err := githubrepo.MakeGithubRepo(repoURL)
+		if err != nil {
 			log.Fatal(err)
 		}
 
@@ -316,7 +316,7 @@ func enableCheck(checkName string, enabledChecks *checker.CheckNameToFnMap) bool
 func init() {
 	// Add the zap flag manually
 	rootCmd.PersistentFlags().AddGoFlagSet(goflag.CommandLine)
-	rootCmd.Flags().Var(&repo, "repo", "repository to check")
+	rootCmd.Flags().StringVar(&repoURL, "repo", "", "repository to check")
 	rootCmd.Flags().StringVar(
 		&npm, "npm", "",
 		"npm package to check, given that the npm package has a GitHub repository")

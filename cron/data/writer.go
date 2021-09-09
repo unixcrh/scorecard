@@ -21,16 +21,15 @@ import (
 	"sort"
 
 	"github.com/jszwec/csvutil"
-
-	"github.com/ossf/scorecard/v2/repos"
+	"github.com/ossf/scorecard/v2/clients"
 )
 
-func repoFormatFromRepoURL(repoURLs []repos.RepoURL) []repoFormat {
+func repoFormatFromRepoURL(repoURLs []clients.Repo) []repoFormat {
 	repoentries := make([]repoFormat, 0)
 	for _, repoURL := range repoURLs {
 		repoentry := repoFormat{
 			Repo:     repoURL.URL(),
-			Metadata: repoURL.Metadata,
+			Metadata: repoURL.Metadata(),
 		}
 		repoentries = append(repoentries, repoentry)
 	}
@@ -38,7 +37,7 @@ func repoFormatFromRepoURL(repoURLs []repos.RepoURL) []repoFormat {
 }
 
 // SortAndAppendTo appends `oldRepos` and `newRepos` before sorting and writing out the result to `out`.
-func SortAndAppendTo(out io.Writer, oldRepos, newRepos []repos.RepoURL) error {
+func SortAndAppendTo(out io.Writer, oldRepos, newRepos []clients.Repo) error {
 	repoentries := repoFormatFromRepoURL(oldRepos)
 	repoentries = append(repoentries, repoFormatFromRepoURL(newRepos)...)
 
@@ -55,13 +54,13 @@ func SortAndAppendTo(out io.Writer, oldRepos, newRepos []repos.RepoURL) error {
 }
 
 // SortAndAppendFrom reads from `in`, appends to newRepos and writes the sorted output to `out`.
-func SortAndAppendFrom(in io.Reader, out io.Writer, newRepos []repos.RepoURL) error {
+func SortAndAppendFrom(in io.Reader, out io.Writer, newRepos []clients.Repo) error {
 	iter, err := MakeIteratorFrom(in)
 	if err != nil {
 		return fmt.Errorf("error during MakeIterator: %w", err)
 	}
 
-	oldRepos := make([]repos.RepoURL, 0)
+	oldRepos := make([]clients.Repo, 0)
 	for iter.HasNext() {
 		repo, err := iter.Next()
 		if err != nil {

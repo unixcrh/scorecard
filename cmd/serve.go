@@ -27,7 +27,6 @@ import (
 	"github.com/ossf/scorecard/v2/checks"
 	"github.com/ossf/scorecard/v2/clients/githubrepo"
 	"github.com/ossf/scorecard/v2/pkg"
-	"github.com/ossf/scorecard/v2/repos"
 )
 
 //nolint:gochecknoinits
@@ -59,8 +58,9 @@ var serveCmd = &cobra.Command{
 			if len(s) != length {
 				rw.WriteHeader(http.StatusBadRequest)
 			}
-			repo := repos.RepoURL{}
-			if err := repo.Set(repoParam); err != nil {
+
+			repo, err := githubrepo.MakeGithubRepo(repoParam)
+			if err != nil {
 				rw.WriteHeader(http.StatusBadRequest)
 			}
 			ctx := r.Context()

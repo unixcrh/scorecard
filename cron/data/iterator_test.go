@@ -21,12 +21,13 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/ossf/scorecard/v2/repos"
+	sce "github.com/ossf/scorecard/v2/errors"
 )
 
 type outcome struct {
 	expectedErr error
-	repo        repos.RepoURL
+	url         string
+	metadata    []string
 	hasError    bool
 }
 
@@ -44,28 +45,16 @@ func TestCsvIterator(t *testing.T) {
 			outcomes: []outcome{
 				{
 					hasError: false,
-					repo: repos.RepoURL{
-						Host:  "github.com",
-						Owner: "owner1",
-						Repo:  "repo1",
-					},
+					url:      "github.com/owner1/repo1",
 				},
 				{
 					hasError: false,
-					repo: repos.RepoURL{
-						Host:  "github.com",
-						Owner: "owner2",
-						Repo:  "repo2",
-					},
+					url:      "github.com/owner2/repo2",
 				},
 				{
 					hasError: false,
-					repo: repos.RepoURL{
-						Host:     "github.com",
-						Owner:    "owner3",
-						Repo:     "repo3",
-						Metadata: []string{"meta"},
-					},
+					url:      "github.com/owner3/repo3",
+					metadata: []string{"meta"},
 				},
 			},
 		},
@@ -75,28 +64,16 @@ func TestCsvIterator(t *testing.T) {
 			outcomes: []outcome{
 				{
 					hasError: false,
-					repo: repos.RepoURL{
-						Host:  "github.com",
-						Owner: "owner1",
-						Repo:  "repo1",
-					},
+					url:      "github.com/owner1/repo1",
 				},
 				{
 					hasError: false,
-					repo: repos.RepoURL{
-						Host:  "github.com",
-						Owner: "owner2",
-						Repo:  "repo2",
-					},
+					url:      "github.com/owner2/repo2",
 				},
 				{
 					hasError: false,
-					repo: repos.RepoURL{
-						Host:     "github.com",
-						Owner:    "owner3",
-						Repo:     "repo3",
-						Metadata: []string{"meta"},
-					},
+					url:      "github.com/owner3/repo3",
+					metadata: []string{"meta"},
 				},
 			},
 		},
@@ -106,15 +83,15 @@ func TestCsvIterator(t *testing.T) {
 			outcomes: []outcome{
 				{
 					hasError:    true,
-					expectedErr: repos.ErrorUnsupportedHost,
+					expectedErr: sce.ErrorUnsupportedHost,
 				},
 				{
 					hasError:    true,
-					expectedErr: repos.ErrorInvalidURL,
+					expectedErr: sce.ErrorInvalidURL,
 				},
 				{
 					hasError:    true,
-					expectedErr: repos.ErrorInvalidURL,
+					expectedErr: sce.ErrorInvalidURL,
 				},
 			},
 		},
@@ -124,28 +101,16 @@ func TestCsvIterator(t *testing.T) {
 			outcomes: []outcome{
 				{
 					hasError: false,
-					repo: repos.RepoURL{
-						Host:  "github.com",
-						Owner: "owner1",
-						Repo:  "repo1",
-					},
+					url:      "github.com/owner1/repo1",
 				},
 				{
 					hasError: false,
-					repo: repos.RepoURL{
-						Host:  "github.com",
-						Owner: "owner2",
-						Repo:  "repo2",
-					},
+					url:      "github.com/owner2/repo2",
 				},
 				{
 					hasError: false,
-					repo: repos.RepoURL{
-						Host:     "github.com",
-						Owner:    "owner3",
-						Repo:     "repo3",
-						Metadata: []string{"meta"},
-					},
+					url:      "github.com/owner3/repo3",
+					metadata: []string{"meta"},
 				},
 			},
 		},
@@ -155,19 +120,11 @@ func TestCsvIterator(t *testing.T) {
 			outcomes: []outcome{
 				{
 					hasError: false,
-					repo: repos.RepoURL{
-						Host:  "github.com",
-						Owner: "owner1",
-						Repo:  "repo1",
-					},
+					url:      "github.com/owner1/repo1",
 				},
 				{
 					hasError: false,
-					repo: repos.RepoURL{
-						Host:  "github.com",
-						Owner: "owner2",
-						Repo:  "repo2",
-					},
+					url:      "github.com/owner2/repo2",
 				},
 				{
 					hasError: true,
@@ -198,8 +155,10 @@ func TestCsvIterator(t *testing.T) {
 				if (err != nil) != outcome.hasError {
 					t.Errorf("expected hasError: %t, got: %v", outcome.hasError, err)
 				}
-				if !outcome.hasError && !cmp.Equal(outcome.repo, repoURL) {
-					t.Errorf("expected repoURL: %s, got %s", outcome.repo, repoURL)
+				if !outcome.hasError && (!cmp.Equal(outcome.url, repoURL.URL()) ||
+					!cmp.Equal(outcome.metadata, repoURL.Metadata())) {
+					t.Errorf("got diff: %s %s", cmp.Diff(outcome.url, repoURL.URL()),
+						cmp.Diff(outcome.metadata, repoURL.Metadata()))
 				}
 				if outcome.hasError && outcome.expectedErr != nil && !errors.Is(err, outcome.expectedErr) {
 					t.Errorf("expected error: %v, got %v", outcome.expectedErr, err)

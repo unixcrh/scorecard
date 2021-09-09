@@ -21,14 +21,14 @@ import (
 	"io"
 
 	"github.com/jszwec/csvutil"
-
-	"github.com/ossf/scorecard/v2/repos"
+	"github.com/ossf/scorecard/v2/clients"
+	"github.com/ossf/scorecard/v2/clients/githubrepo"
 )
 
 // Iterator interface is used to iterate through list of input repos for the cron job.
 type Iterator interface {
 	HasNext() bool
-	Next() (repos.RepoURL, error)
+	Next() (clients.Repo, error)
 }
 
 // MakeIteratorFrom returns an implementation of Iterator interface.
@@ -54,17 +54,14 @@ func (reader *csvIterator) HasNext() bool {
 	return !errors.Is(reader.err, io.EOF)
 }
 
-func (reader *csvIterator) Next() (repos.RepoURL, error) {
+func (reader *csvIterator) Next() (clients.Repo, error) {
 	if reader.err != nil {
-		return repos.RepoURL{}, reader.err
+		return nil, reader.err
 	}
-	ret := repos.RepoURL{
-		Metadata: reader.next.Metadata,
+	ret, err := githubrepo.MakeGithubRepo(reader.next.Repo)
+	if err != nil {
+		return nil, err
 	}
-	var err error
-	err = ret.Set(reader.next.Repo)
-	if err == nil {
-		err = ret.ValidGitHubURL()
-	}
+	ret.AppendMetadata(reader.next.Metadata...)
 	return ret, errors.Unwrap(err)
 }

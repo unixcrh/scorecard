@@ -18,33 +18,40 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/ossf/scorecard/v2/repos"
+	"github.com/ossf/scorecard/v2/clients"
 )
+
+type mockRepo struct {
+	url      string
+	metadata []string
+}
+
+func reposFrom(in []mockRepo) []clients.Repo {
+	var mocks *m
+
+	return mocks
+}
 
 func TestCsvWriter(t *testing.T) {
 	t.Parallel()
 	testcases := []struct {
 		name     string
 		out      string
-		oldRepos []repos.RepoURL
-		newRepos []repos.RepoURL
+		oldRepos []mockRepo
+		newRepos []mockRepo
 	}{
 		{
 			name: "Basic",
-			oldRepos: []repos.RepoURL{
+			oldRepos: []mockRepo{
 				{
-					Host:     "github.com",
-					Owner:    "owner1",
-					Repo:     "repo1",
-					Metadata: []string{"meta1"},
+					url:      "github.com/owner1/repo1",
+					metadata: []string{"meta1"},
 				},
 			},
-			newRepos: []repos.RepoURL{
+			newRepos: []mockRepo{
 				{
-					Host:     "github.com",
-					Owner:    "owner2",
-					Repo:     "repo2",
-					Metadata: []string{"meta2"},
+					url:      "github.com/owner2/repo2",
+					metadata: []string{"meta2"},
 				},
 			},
 			out: `repo,metadata
@@ -59,7 +66,7 @@ github.com/owner2/repo2,meta2
 		t.Run(testcase.name, func(t *testing.T) {
 			t.Parallel()
 			var buf bytes.Buffer
-			err := SortAndAppendTo(&buf, testcase.oldRepos, testcase.newRepos)
+			err := SortAndAppendTo(&buf, reposFrom(testcase.oldRepos), reposFrom(testcase.newRepos))
 			if err != nil {
 				t.Errorf("error while running testcase: %v", err)
 			}
