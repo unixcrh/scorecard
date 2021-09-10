@@ -49,9 +49,14 @@ type Client struct {
 }
 
 // InitRepo sets up the GitHub repo in local storage for improving performance and GitHub token usage efficiency.
-func (client *Client) InitRepo(owner, repoName string) error {
+func (client *Client) InitRepo(inputRepo clients.Repo) error {
+	ghRepo, ok := inputRepo.(*repoURL)
+	if !ok {
+		return fmt.Errorf("inputRepo should be of type repoURL: %v", inputRepo)
+	}
+
 	// Sanity check.
-	repo, _, err := client.repoClient.Repositories.Get(client.ctx, owner, repoName)
+	repo, _, err := client.repoClient.Repositories.Get(client.ctx, ghRepo.owner, ghRepo.repo)
 	if err != nil {
 		// nolint: wrapcheck
 		return sce.Create(sce.ErrRepoUnreachable, err.Error())
